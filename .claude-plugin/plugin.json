@@ -1,0 +1,38 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "playwright-suite-skills",
+  "version": "0.1.0",
+  "description": "Project-agnostic Claude Code skills and subagents for Playwright suites. One skill reads your repository's actual conventions into a profile; the rest follow it — scaffolding specs, hardening locators, triaging a red suite, reviewing a test diff, scoping work before it starts. Assumes no framework, no directory layout, and no house style.",
+  "author": {
+    "name": "Andrei Cristian Banu",
+    "url": "https://github.com/AndreiBanu1"
+  },
+  "homepage": "https://github.com/AndreiBanu1/playwright-suite-skills",
+  "repository": "https://github.com/AndreiBanu1/playwright-suite-skills",
+  "license": "MIT",
+  "keywords": [
+    "playwright",
+    "testing",
+    "test-automation",
+    "e2e",
+    "qa",
+    "code-review",
+    "skills",
+    "agents"
+  ],
+  "skills": [
+    "./skills/probe-conventions",
+    "./skills/clarify-scope",
+    "./skills/write-e2e-test",
+    "./skills/write-api-test",
+    "./skills/write-db-test",
+    "./skills/write-page-object",
+    "./skills/write-api-client",
+    "./skills/register-fixture",
+    "./skills/run-suite",
+    "./skills/harden-locators",
+    "./skills/triage-red-suite",
+    "./skills/audit-changeset",
+    "./skills/handoff-notes"
+  ]
+}

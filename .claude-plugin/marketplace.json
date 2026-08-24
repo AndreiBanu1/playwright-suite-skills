@@ -1,0 +1,25 @@
+{
+  "name": "playwright-suite",
+  "description": "Project-agnostic Claude Code tooling for Playwright test suites.",
+  "owner": {
+    "name": "Andrei Cristian Banu",
+    "url": "https://github.com/AndreiBanu1"
+  },
+  "plugins": [
+    {
+      "name": "playwright-suite-skills",
+      "source": "./",
+      "version": "0.1.0",
+      "description": "13 skills and 4 subagents for Playwright suites. Reads your repository's real conventions into a profile instead of assuming a framework, then scaffolds specs, models and clients that match it — plus locator hardening, red-suite triage, test-diff review, and scoping.",
+      "category": "testing",
+      "keywords": [
+        "playwright",
+        "testing",
+        "test-automation",
+        "e2e",
+        "qa",
+        "code-review"
+      ]
+    }
+  ]
+}

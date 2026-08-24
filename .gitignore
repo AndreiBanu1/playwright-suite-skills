@@ -1,0 +1,22 @@
+# Local Claude Code state — never commit. settings.local.json records per-machine
+# permission grants and can contain internal host names and paths.
+.claude/settings.local.json
+settings.local.json
+.claude/
+.mcp.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Node, in case tooling is ever added here
+node_modules/
+npm-debug.log*
+*.tgz
+
+# Anything a skill run might leave behind
+/tmp/
+*.log
