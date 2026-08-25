@@ -146,6 +146,29 @@ straight to `write-*-test`.
 
 `handoff-notes` cuts across all of it, at whatever point the session runs out.
 
+## A worked example: `playwright-test-healer`
+
+[**demoqa-playwright-framework#2**](https://github.com/AndreiBanu1/demoqa-playwright-framework/pull/2) —
+a real suite broken on purpose, then repaired by the healer agent, with CI red and green on the record.
+
+Twelve locators in two page objects were rotted deliberately: one to off-by-one positional CSS, the other
+to react-table markup the app no longer renders. That took **17 of 53 tests red across six spec files**,
+while only two files were touched — page objects are shared. The quality gate stayed green throughout,
+because the breakage is valid, formatted, type-correct TypeScript. Only tests could catch it.
+
+The healer was then run once per failing spec and **denied the answer**: no git history, no diffs, no
+reflog, no previous versions of any file — verified afterwards against both session transcripts. It worked
+from the live DOM alone and returned the suite to **53/53 at `retries: 0`** without touching a single spec.
+
+Two details are the ones worth borrowing:
+
+- **The mutation check.** Eight expectations were broken in turn to prove each test goes red for its own
+  specific reason, then restored. All eight behaved as predicted. A green suite that was never shown to be
+  capable of failing is not evidence.
+- **It improved on the original.** On two locators it declined to port what had been there and said why —
+  dropping a row filter that would now mask a real regression, and binding titles to book identity rather
+  than column position.
+
 ## Three decisions worth knowing about
 
 **Verification is part of every authoring skill, not a separate step.** A spec that has not been run is
