@@ -8,6 +8,10 @@ The pack is **project-agnostic by construction.** It contains no conventions of 
 skill reads your repository and writes down what it actually does; the other twelve read that
 description and follow it.
 
+**Want to see it work first?** [A worked example](#a-worked-example-playwright-test-healer) — 17 of 53
+tests broken on purpose in a real suite, then healed back to green by one of the agents with git history
+withheld from it, CI red and green on the record.
+
 ## Why not just prescribe conventions?
 
 Because a skill that asserts your fixtures live at one particular path is useful in exactly one
@@ -115,6 +119,9 @@ If you use VS Code, the four subagents work in Copilot as-is — it reads custom
 
 The agent names match the ones Playwright's own tooling ships, so an existing setup keeps working.
 
+`playwright-test-healer` is the one with [a worked example](#a-worked-example-playwright-test-healer)
+below, on a real repository.
+
 ## How they fit together
 
 ```
@@ -149,25 +156,75 @@ straight to `write-*-test`.
 ## A worked example: `playwright-test-healer`
 
 [**demoqa-playwright-framework#2**](https://github.com/AndreiBanu1/demoqa-playwright-framework/pull/2) —
-a real suite broken on purpose, then repaired by the healer agent, with CI red and green on the record.
+a real 53-test suite broken on purpose, then repaired by the healer agent, with CI red and green on the
+record. If you want to know what this pack actually does before installing it, read that PR.
 
-Twelve locators in two page objects were rotted deliberately: one to off-by-one positional CSS, the other
-to react-table markup the app no longer renders. That took **17 of 53 tests red across six spec files**,
-while only two files were touched — page objects are shared. The quality gate stayed green throughout,
-because the breakage is valid, formatted, type-correct TypeScript. Only tests could catch it.
+**1. The suite was broken.** Twelve locators in two page objects were rotted deliberately, in two different
+ways so the agent had to diagnose rather than pattern-match: `login.page.ts` to off-by-one positional CSS
+under a `#userForm` wrapper that does not exist in the DOM, `books.page.ts` to react-table v6 markup
+(`div.ReactTable`, `div.rt-tbody`, `span.-pageInfo`) that the app no longer renders.
 
-The healer was then run once per failing spec and **denied the answer**: no git history, no diffs, no
-reflog, no previous versions of any file — verified afterwards against both session transcripts. It worked
-from the live DOM alone and returned the suite to **53/53 at `retries: 0`** without touching a single spec.
+That took **17 of 53 tests red across six spec files** while only two files were touched — page objects are
+shared, which is exactly why locator rot is worth practising on. All 18 API tests stayed green; the fault
+was purely in the UI layer.
 
-Two details are the ones worth borrowing:
+The detail that matters most: **the CI quality gate passed on the red commit.** Typecheck, eslint, prettier
+and spec-placement were all green while 17 tests failed. The breakage is valid, formatted, type-correct
+TypeScript. No amount of static analysis catches it — only tests do.
 
-- **The mutation check.** Eight expectations were broken in turn to prove each test goes red for its own
-  specific reason, then restored. All eight behaved as predicted. A green suite that was never shown to be
-  capable of failing is not evidence.
-- **It improved on the original.** On two locators it declined to port what had been there and said why —
-  dropping a row filter that would now mask a real regression, and binding titles to book identity rather
-  than column position.
+**2. The healer was run, once per failing spec**, headless, each in a fresh session:
+
+```
+src/tests/ui/account/login.ui.spec.ts is failing (3 of 3 tests).
+Use the playwright-test-healer subagent to repair it.
+- Do NOT read git history, diffs, git show, or the reflog, and do not look for
+  previous versions of any file. Derive locators from the live page.
+- Repair the cause in the page object, not the spec.
+- Do the mutation check your procedure requires, and report its result.
+```
+
+It was **denied the answer** on purpose: `git diff HEAD~1` would have handed it the solution and the
+exercise would have proved nothing. That constraint was verified afterwards against both session
+transcripts — zero git-history commands in either run. It worked from the live DOM alone, running the suite
+through the Playwright Test MCP server, reading the failure, snapshotting the real page, and generating
+locators from what was actually rendered.
+
+**3. What came back.** Its repairs, in its own words, with the specs untouched:
+
+| | was | now |
+| --- | --- | --- |
+| `userNameInput` | `#userForm > div:nth-child(1) input.form-control` | `getByPlaceholder('UserName')` |
+| `loginButton` | positional `.first()` on a button chain | `getByRole('button', { name: 'Login' })` |
+| `searchBox` | `div.ReactTable input#searchBox` | `getByPlaceholder('Type to search')` |
+| `tableRows` | `div.rt-tbody div.rt-tr-group` filtered `has: a` | `booksTable.locator('tbody').getByRole('row')` |
+
+| | tests | result |
+| --- | --- | --- |
+| baseline, before the break | 53 | 53 passed, three consecutive runs, `retries: 0` |
+| after the break | 53 | **17 failed / 36 passed**, reproduced twice — deterministic, not flake |
+| after the heal | 53 | **53 passed**, `retries: 0`, full quality gate clean |
+
+No spec modified, no assertion widened, no timeout raised, no wait added, no retry introduced — the
+prohibitions at the top of this README, holding under the one condition that tempts you to break them.
+
+Two things there are worth borrowing whether or not you use this pack:
+
+- **The mutation check is what makes the green mean anything.** Eight expectations were broken in turn —
+  `Publisher`→`Publishers`, row count +1, a bogus title, `totalPages` 1→2, both pagination flags, a
+  no-match query swapped for a matching one — each confirmed red *for its own specific reason*, then
+  restored. All eight behaved as predicted. A suite that was never shown to be capable of failing is not
+  evidence that anything works.
+- **It improved on what it replaced, and said why.** On two locators it declined to port the original:
+  it dropped a `has: a` row filter, because the old DOM emitted empty filler rows while the new one emits a
+  genuinely empty `<tbody>` on a no-match search — so the filter would now hide a real regression in
+  `expectRowCount`. And it swapped `:nth-child(2)` for a `span[id^="see-book-"]` anchor, binding titles to
+  book identity instead of column position.
+
+One honest caveat, since a demo that hides its rough edges is not much use: the agent's written diagnosis
+attributes the rot to an upstream rewrite of the application. That is the correct inference from live-DOM
+evidence alone — it had no way to know a human had broken it deliberately ten minutes earlier, because that
+evidence was deliberately withheld. And the first attempt had to be killed: it wrote a probe spec
+containing `page.pause()`, which blocks forever in an unattended run with no one to click *Resume*.
 
 ## Three decisions worth knowing about
 
@@ -187,7 +244,9 @@ misses a widened assertion has actively done harm — it produced an approval.
 ## What is deliberately not here
 
 No test framework, no example suite, no config, no CI templates. This pack works on the Playwright suite
-you already have; if you need a framework, use Playwright's own scaffolding.
+you already have; if you need a framework, use Playwright's own scaffolding. The worked example above is
+deliberately a *link* to a separate repository rather than a suite vendored into this one — installing the
+pack should not drop someone else's tests into your project.
 
 No mocking, visual-regression, load-testing, or accessibility-audit skills. Each is a real specialism and
 a thin skill about it would be worse than none.
