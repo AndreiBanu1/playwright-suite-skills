@@ -264,6 +264,6 @@ Issues and pull requests are welcome. One thing to know before proposing a skill
 skill assume a convention will be declined, however reasonable the convention. That assumption is the
 specific failure this pack exists to avoid.
 
-## Licence
+## License
 
 MIT — see [LICENSE](LICENSE).
